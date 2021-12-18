@@ -189,15 +189,15 @@ namespace Hangman
                             // Användaren gissar en bokstav
                             Console.WriteLine("Gissa en bokstav: ");
                             Console.WriteLine("Ditt ord ser ut såhär: " + hiddenSecretWord);
-                            char gissadBokstav = Console.ReadKey().KeyChar;
+                            char guessedChar = Console.ReadKey().KeyChar;
                             Console.WriteLine();
 
                             // Kontrollerar om bokstaven finns i ordet
                             for (int i = 0; i < secretWord.Length; i++)
                             {
-                                if (gissadBokstav == secretWord[i])
+                                if (guessedChar == secretWord[i])
                                 {
-                                    hiddenSecretWord = ReplaceCharInString(hiddenSecretWord, i, gissadBokstav);
+                                    hiddenSecretWord = ReplaceCharInString(hiddenSecretWord, i, guessedChar);
                                     correctGuess = true;
                                 }
                             }
