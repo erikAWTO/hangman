@@ -1,16 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Hangman
 {
     public class PlayerInfo
     {
-        public string name;
-        public int score;
-        public double time;
+        public string name { get; set; }
+        public int score { get; set; }
+        public double time { get; set; }
 
         public PlayerInfo(string name, int score, double time)
         {

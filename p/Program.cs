@@ -7,7 +7,7 @@ namespace Hangman
 {
     public class Program
     {
-        public static List<PlayerInfo> highScore = new List<PlayerInfo>();
+        private static List<PlayerInfo> highScore = new List<PlayerInfo>();
 
         private static double[] currentTime = { 0, 0 };
 
@@ -30,7 +30,7 @@ namespace Hangman
         // Visar highscorelistan
         private static void ShowHighScore()
         {
-            Console.WriteLine("Highscore sorterat med lägst poäng först");
+            Console.WriteLine("Topp 5, sorterat med lägst poäng först");
             Console.WriteLine();
 
             foreach (var player in highScore)
@@ -59,6 +59,26 @@ namespace Hangman
             highScore = highScore.OrderBy(PlayerInfo => PlayerInfo.score).ToList();
         }
 
+        // Lägger till en spelare i highscorelistan
+        private static void AddToHighScore(int currentPlayer, string name)
+        {
+            PlayerInfo player = new PlayerInfo(name, currentScore[currentPlayer], Math.Round(currentTime[currentPlayer], 3));
+
+            if (highScore.Count() < 5)
+            {
+                highScore.Add(player);
+            }
+            else
+            {
+                if (highScore[4].score > player.score)
+                {
+                    highScore.RemoveAt(4);
+                    highScore.Add(player);
+                }
+                return;
+            }
+        }
+
         // Nollställer poäng för den aktuella rundan
         private static void ResetScore()
         {
@@ -73,7 +93,7 @@ namespace Hangman
             currentTime[1] = 0;
         }
 
-        // Skapar en sträng med blanksteg med samma längd som det hemliga ordet
+        // Skapar en string med blanksteg med samma längd som det hemliga ordet
         private static string CreateHiddenSecretWord(string word)
         {
             string hiddenWord = "";
@@ -120,8 +140,9 @@ namespace Hangman
             {
                 Console.WriteLine("Vinnare: " + name1);
             }
-            else
+            else // Om poängen är lika
             {
+                // Jämför vem som har bäst tid
                 if (currentTime[0] < currentTime[1])
                 {
                     Console.WriteLine("Vinnare: " + name1);
@@ -177,7 +198,6 @@ namespace Hangman
                     while (true)
                     {
                         string secretWord = PickSecretWord();
-
                         string hiddenSecretWord = CreateHiddenSecretWord(secretWord);
 
                         while (true)
@@ -215,7 +235,8 @@ namespace Hangman
                                 if (currentPlayer == 0)
                                 {
                                     //Lägger till en ny spelare till highscorelistan
-                                    highScore.Add(new PlayerInfo(name1, currentScore[currentPlayer], Math.Round(currentTime[currentPlayer], 3)));
+                                    //highScore.Add(new PlayerInfo(name1, currentScore[currentPlayer], Math.Round(currentTime[currentPlayer], 3)));
+                                    AddToHighScore(currentPlayer, name1);
 
                                     Console.WriteLine("-------------------------------------------------");
                                     Console.WriteLine("Nu är det " + name2 + " som ska köra");
@@ -226,7 +247,8 @@ namespace Hangman
                                 else
                                 {
                                     // Lägger till en ny spelare till highscorelistan
-                                    highScore.Add(new PlayerInfo(name2, currentScore[currentPlayer], Math.Round(currentTime[currentPlayer], 3)));
+                                    //highScore.Add(new PlayerInfo(name2, currentScore[currentPlayer], Math.Round(currentTime[currentPlayer], 3)));
+                                    AddToHighScore(currentPlayer, name2);
 
                                     ShowResults(name1, name2);
 
