@@ -1,34 +1,140 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
+using System.Linq;
 using System.Timers;
 
 namespace Hangman
 {
     public class Program
     {
-        //Håller koll på tid för respektive spelare
-        private static double[] time = { 0, 0 };
+        public static List<PlayerInfo> highScore = new List<PlayerInfo>();
 
-        //Anropas när Timer för spelare 1 överflödas
+        private static double[] currentTime = { 0, 0 };
+
+        private static int[] currentScore = { 0, 0 };
+
+        private static bool newGame = true;
+
+        // Anropas när Timer för spelare 1 överflödas
         private static void OnTimedEvent1(object source, ElapsedEventArgs e)
         {
-            time[0] += 0.01;
+            currentTime[0] += 0.01;
         }
 
-        //Anropas när Timer för spelare 2 överflödas
+        // Anropas när Timer för spelare 2 överflödas
         private static void OnTimedEvent2(object source, ElapsedEventArgs e)
         {
-            time[1] += 0.01;
+            currentTime[1] += 0.01;
         }
 
-        //Lambda för att sortera lista
-        private static int CompareValue(KeyValuePair<string, int> a, KeyValuePair<string, int> b)
+        // Visar highscorelistan
+        private static void ShowHighScore()
         {
-            return a.Value.CompareTo(b.Value);
+            Console.WriteLine("Highscore sorterat med lägst poäng först");
+            Console.WriteLine();
+
+            foreach (var player in highScore)
+            {
+                Console.WriteLine("Spelare: {0} Poäng: {1} Tid: {2}", player.name, player.score, Math.Round(player.time, 3));
+            }
+            Console.WriteLine();
+            Console.WriteLine("Tryck på valfri tangent för ny runda");
+            Console.WriteLine("Tryck på esc för att avsluta spelet");
+
+            switch (Console.ReadKey().Key)
+            {
+                case ConsoleKey.Escape:
+                    newGame = false;
+                    break;
+
+                default:
+                    Console.Clear();
+                    break;
+            }
         }
 
-        private static string[] ordLista =
+        // Sorterar highscore listan baserat på poäng i stigande ordning
+        private static void SortHighScore()
+        {
+            highScore = highScore.OrderBy(PlayerInfo => PlayerInfo.score).ToList();
+        }
+
+        // Nollställer poäng för den aktuella rundan
+        private static void ResetScore()
+        {
+            currentScore[0] = 0;
+            currentScore[1] = 0;
+        }
+
+        // Nollställer tid för den aktuella rundan
+        private static void ResetTime()
+        {
+            currentTime[0] = 0;
+            currentTime[1] = 0;
+        }
+
+        // Skapar en sträng med blanksteg med samma längd som det hemliga ordet
+        private static string CreateHiddenSecretWord(string word)
+        {
+            string hiddenWord = "";
+
+            for (int i = 0; i < word.Length; i++)
+            {
+                hiddenWord += "_";
+            }
+
+            return hiddenWord;
+        }
+
+        // Slumpar fram ett ord från ordlistan
+        private static string PickSecretWord()
+        {
+            Random rand = new Random(Environment.TickCount);
+
+            return wordList[rand.Next(wordList.Length)];
+        }
+
+        // Byter ut en char i en string
+        private static string ReplaceCharInString(string text, int position, char letter)
+        {
+            text = text.Remove(position, 1);
+            text = text.Insert(position, letter.ToString());
+
+            return text;
+        }
+
+        // Visar resultat för den aktuella rundan
+        private static void ShowResults(string name1, string name2)
+        {
+            Console.WriteLine("-------------------------------------------------");
+            Console.WriteLine("{0} Poäng: {1} Tid: {2}s", name1, currentScore[0], Math.Round(currentTime[0], 3));
+            Console.WriteLine();
+            Console.WriteLine("{0} Poäng: {1} Tid: {2}s", name2, currentScore[1], Math.Round(currentTime[1], 3));
+            Console.WriteLine();
+
+            if (currentScore[0] > currentScore[1])
+            {
+                Console.WriteLine("Vinnare: " + name2);
+            }
+            else if (currentScore[0] < currentScore[1])
+            {
+                Console.WriteLine("Vinnare: " + name1);
+            }
+            else
+            {
+                if (currentTime[0] < currentTime[1])
+                {
+                    Console.WriteLine("Vinnare: " + name1);
+                }
+                else
+                {
+                    Console.WriteLine("Vinnare: " + name2);
+                }
+            }
+        }
+
+        // Ordlista
+        private static string[] wordList =
         {
             "ratt",
             "apa",
@@ -42,237 +148,127 @@ namespace Hangman
             "ko"
         };
 
-        private static string ReplaceCharInString(string text, int position, char letter)
+        public static void Main(string[] args)
         {
-            text = text.Remove(position, 1);
-            text = text.Insert(position, letter.ToString());
-
-            return text;
-        }
-
-        private static void ReadHighScore()
-        {
-        }
-
-        private static void Main(string[] args)
-        {
-            Timer TimerP1 = new Timer();
-            Timer TimerP2 = new Timer();
-
-            int[] currentScore = { 0, 0 };
-
-            //SortedList<string, int> highScore = new SortedList<string, int>();
-            List<Tuple<string, int>> highScore = new List<Tuple<string, int>>();
-            //int[] totalScore = { 0, 0, 0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 };
-
-            string path = @"c:\temp\notHighScore.txt";
-
-            if (!File.Exists(path))
-            {
-                using (StreamWriter sw = File.CreateText(path)) ;
-            }
-
-            using (StreamReader sr = File.OpenText(path))
-            {
-                while (!sr.EndOfStream)
-                {
-                    var line = sr.ReadLine();
-                    var values = line.Split(',');
-
-                    var val1 = values[0].ToString();
-                    var val2 = int.Parse(values[1], System.Globalization.NumberStyles.Float);
-
-                    Tuple<string, int> highScoreTuple = Tuple.Create<string, int>(val1, val2);
-
-                    highScore.Add(highScoreTuple);
-                }
-            }
-
-            bool nyRunda = true;
-            bool omstart = true;
-
-            if (!File.Exists(path))
-            {
-                // Create a file to write to.
-                using (StreamWriter sw = File.CreateText(path))
-                {
-                    sw.WriteLine("Hello");
-                    sw.WriteLine("And");
-                    sw.WriteLine("Welcome");
-                }
-            }
-
-            // Open the file to read from.
-
-            while (omstart == true)
+            while (newGame == true)
             {
                 Console.WriteLine("Skriv in namn på spelare 1: ");
-                string namn1 = Console.ReadLine();
+                string name1 = Console.ReadLine();
 
                 Console.WriteLine("Skriv in namn på spelare 2: ");
-                string namn2 = Console.ReadLine();
+                string name2 = Console.ReadLine();
 
-                for (int player = 0; player < 2; player++)
+                for (int currentPlayer = 0; currentPlayer < 2; currentPlayer++)
                 {
-                    if (player == 0)
+                    Timer timer1 = new Timer();
+                    timer1.Interval = 10;
+
+                    if (currentPlayer == 0)
                     {
-                        TimerP1.Elapsed += new ElapsedEventHandler(OnTimedEvent1);
-                        TimerP1.Interval = 10;
-                        TimerP1.Enabled = true;
+                        timer1.Elapsed += new ElapsedEventHandler(OnTimedEvent1);
                     }
                     else
                     {
-                        TimerP2.Elapsed += new ElapsedEventHandler(OnTimedEvent2);
-                        TimerP2.Interval = 10;
-                        TimerP2.Enabled = true;
+                        timer1.Elapsed += new ElapsedEventHandler(OnTimedEvent2);
                     }
 
-                    while (nyRunda == true)
+                    timer1.Start();
+
+                    while (true)
                     {
-                        string nyttOrd = "";
+                        string secretWord = PickSecretWord();
 
-                        Random rand = new Random(Environment.TickCount);
+                        string hiddenSecretWord = CreateHiddenSecretWord(secretWord);
 
-                        string text = ordLista[rand.Next(ordLista.Length)];
-
-                        // Skapar ett nytt ord med lika många understräck
-                        for (int i = 0; i < text.Length; i++)
+                        while (true)
                         {
-                            nyttOrd += "_";
-                        }
+                            bool correctGuess = false;
 
-                        // Användaren har 5 liv
-
-                        bool avsluta = false;
-
-                        while (avsluta == false)
-                        {
                             Console.WriteLine();
-                            bool rättSvar = false;
 
-                            //Användaren gissar en bokstav
+                            // Användaren gissar en bokstav
                             Console.WriteLine("Gissa en bokstav: ");
-                            Console.WriteLine("Ditt ord ser ut såhär: " + nyttOrd);
+                            Console.WriteLine("Ditt ord ser ut såhär: " + hiddenSecretWord);
                             char gissadBokstav = Console.ReadKey().KeyChar;
                             Console.WriteLine();
 
                             // Kontrollerar om bokstaven finns i ordet
-                            for (int i = 0; i < text.Length; i++)
+                            for (int i = 0; i < secretWord.Length; i++)
                             {
-                                if (gissadBokstav == text[i])
+                                if (gissadBokstav == secretWord[i])
                                 {
-                                    nyttOrd = ReplaceCharInString(nyttOrd, i, gissadBokstav);
-                                    rättSvar = true;
+                                    hiddenSecretWord = ReplaceCharInString(hiddenSecretWord, i, gissadBokstav);
+                                    correctGuess = true;
                                 }
                             }
 
-                            currentScore[player]++;
+                            currentScore[currentPlayer]++;
 
                             // Om alla bokstäver är rätt vinner användaren
-                            if (text == nyttOrd)
+                            if (hiddenSecretWord == secretWord)
                             {
-                                Console.WriteLine("Ordet var: " + text);
-                                Console.WriteLine("Spelare " + namn1 + " score blev: " + currentScore[player]);
-                                if (player == 0)
+                                timer1.Stop();
+                                timer1.Dispose();
+
+                                Console.WriteLine("Ordet var: " + secretWord);
+                                Console.WriteLine("Spelare " + name1 + " score blev: " + currentScore[currentPlayer]);
+                                if (currentPlayer == 0)
                                 {
-                                    TimerP1.Enabled = false;
+                                    //Lägger till en ny spelare till highscorelistan
+                                    highScore.Add(new PlayerInfo(name1, currentScore[currentPlayer], Math.Round(currentTime[currentPlayer], 3)));
 
-                                    highScore.Add(new Tuple<string, int>(namn1, currentScore[0]));
-
-                                    Console.WriteLine("------------------");
-                                    Console.WriteLine("Nu är det " + namn2 + " som ska köra");
-                                    Console.WriteLine("När " + namn2 + " är reda tryck på valfri tangent");
+                                    Console.WriteLine("-------------------------------------------------");
+                                    Console.WriteLine("Nu är det " + name2 + " som ska köra");
+                                    Console.WriteLine("När " + name2 + " är redo, tryck på valfri tangent");
                                     Console.ReadKey();
                                     Console.Clear();
                                 }
                                 else
                                 {
-                                    TimerP2.Enabled = false;
+                                    // Lägger till en ny spelare till highscorelistan
+                                    highScore.Add(new PlayerInfo(name2, currentScore[currentPlayer], Math.Round(currentTime[currentPlayer], 3)));
 
-                                    highScore.Add(new Tuple<string, int>(namn2, currentScore[1]));
+                                    ShowResults(name1, name2);
 
-                                    Console.WriteLine("------------------");
-                                    Console.WriteLine(namn1 + " Score: " + currentScore[0] + " Tid: " + Math.Round(time[0], 3) + "s");
+                                    ResetScore();
+                                    ResetTime();
+
                                     Console.WriteLine();
-                                    Console.WriteLine(namn2 + " Score: " + currentScore[1] + " Tid: " + Math.Round(time[1], 3) + "s");
-                                    Console.WriteLine();
+                                    Console.WriteLine("Tryck på space för att visa highscore");
+                                    Console.WriteLine("Tryck på valfri tangent för ny runda");
+                                    Console.WriteLine("Tryck på esc för att avsluta spelet");
 
-                                    if (currentScore[0] > currentScore[1])
+                                    switch (Console.ReadKey().Key)
                                     {
-                                        Console.WriteLine("Vinnare: " + namn2);
-                                    }
-                                    else if (currentScore[0] < currentScore[1])
-                                    {
-                                        Console.WriteLine("Vinnare: " + namn1);
-                                    }
-                                    else
-                                    {
-                                        if (time[0] < time[1])
-                                        {
-                                            Console.WriteLine("Vinnare: " + namn1);
-                                        }
-                                        else
-                                        {
-                                            Console.WriteLine("Vinnare: " + namn2);
-                                        }
-                                    }
-                                    Console.WriteLine("Tryck på valfri tangent för att visa highscore");
+                                        case ConsoleKey.Spacebar:
+                                            Console.Clear();
+                                            SortHighScore();
+                                            ShowHighScore();
+                                            Console.Clear();
+                                            break;
 
-                                    //Sortera listan stigande beroende på score, 1 2 3 4 ....
-                                    highScore.Sort((a, b) => a.Item2.CompareTo(b.Item2));
+                                        case ConsoleKey.Escape:
+                                            newGame = false;
+                                            return;
 
-                                   
-                                    using (StreamWriter sw = File.AppendText(path))
-                                    {
-                                        foreach (var pair in highScore)
-                                        {
-                                            sw.WriteLine(pair.Item1 + "," + pair.Item2);
-                                        }
-                                    }
-                                    
-
-                                    Console.ReadKey();
-                                    Console.Clear();
-                                    Console.WriteLine("High Score");
-                                    Console.WriteLine();
-
-                                    foreach (var pair in highScore)
-                                    {
-                                        Console.WriteLine("Namn: " + pair.Item1 + " Score: " + pair.Item2);
-                                        Console.WriteLine();
-                                    }
-
-                                    Console.WriteLine("Starta om? Tryck på space");
-
-                                    if (Console.ReadKey().Key == ConsoleKey.Spacebar)
-                                    {
-                                        omstart = true;
-
-                                        currentScore[0] = 0;
-                                        currentScore[1] = 0;
-
-                                        Console.Clear();
-                                    }
-                                    else
-                                    {
-                                        omstart = false;
+                                        default:
+                                            Console.Clear();
+                                            break;
                                     }
                                 }
-
                                 break;
                             }
                             else
                             {
                                 // Om gissningen var rätt
-                                if (rättSvar == true)
+                                if (correctGuess == true)
                                 {
-                                    Console.WriteLine("Rätt gissat");
+                                    Console.WriteLine("Rätt");
                                 }
-
-                                // Om bokstaven var fel
+                                // Om gissningen var fel
                                 else
                                 {
-                                    Console.WriteLine("Fel gissat");
+                                    Console.WriteLine("Fel");
                                 }
                             }
                         }
