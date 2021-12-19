@@ -30,7 +30,7 @@ namespace Hangman
         // Visar highscorelistan
         private static void ShowHighScore()
         {
-            Console.WriteLine("Topp 5, sorterat med lägst poäng först");
+            Console.WriteLine("Topp 5, lägst poäng först");
             Console.WriteLine();
 
             foreach (var player in highScore)
@@ -75,7 +75,6 @@ namespace Hangman
                     highScore.RemoveAt(4);
                     highScore.Add(player);
                 }
-                return;
             }
         }
 
@@ -231,11 +230,10 @@ namespace Hangman
                                 timer1.Dispose();
 
                                 Console.WriteLine("Ordet var: " + secretWord);
-                                Console.WriteLine("Spelare " + name1 + " score blev: " + currentScore[currentPlayer]);
+                                Console.WriteLine("Spelare " + name1 + " poäng blev: " + currentScore[currentPlayer]);
                                 if (currentPlayer == 0)
                                 {
                                     //Lägger till en ny spelare till highscorelistan
-                                    //highScore.Add(new PlayerInfo(name1, currentScore[currentPlayer], Math.Round(currentTime[currentPlayer], 3)));
                                     AddToHighScore(currentPlayer, name1);
 
                                     Console.WriteLine("-------------------------------------------------");
@@ -246,8 +244,7 @@ namespace Hangman
                                 }
                                 else
                                 {
-                                    // Lägger till en ny spelare till highscorelistan
-                                    //highScore.Add(new PlayerInfo(name2, currentScore[currentPlayer], Math.Round(currentTime[currentPlayer], 3)));
+                                    //Lägger till en ny spelare till highscorelistan
                                     AddToHighScore(currentPlayer, name2);
 
                                     ShowResults(name1, name2);
@@ -271,7 +268,7 @@ namespace Hangman
 
                                         case ConsoleKey.Escape:
                                             newGame = false;
-                                            return;
+                                            break;
 
                                         default:
                                             Console.Clear();
